@@ -1,9 +1,0 @@
-Server : 113.240.72.12:8081 <-> Client : 10.26.184.140:1299
-Client -> Server Num: 1, SEQ: 0, ACK: 0 S
-Server -> Client Num: 2, SEQ: 0, ACK: 1 SA
-Client -> Server Num: 3, SEQ: 1, ACK: 1 A
-Client -> Server Num: 4, SEQ: 1, ACK: 1 PA
-Client -> Server Num: 5, SEQ: 716, ACK: 1 FA
-Server -> Client Num: 6, SEQ: 1, ACK: 716 A
-Server -> Client Num: 7, SEQ: 1, ACK: 717 FA
-Client -> Server Num: 8, SEQ: 717, ACK: 2 A
