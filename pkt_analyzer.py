@@ -126,7 +126,6 @@ def http_stream_analyzer(pcapfile, savefile, client_ip_prev, server_ip_prev, cli
 
     def custom_filter(packet):
         return packet.haslayer(IP) and packet.haslayer(TCP)
-
     packets = rdpcap(pcapfile)
     packets = list(filter(custom_filter, packets))
     with open(savefile, 'w') as f:
@@ -153,14 +152,12 @@ def http_stream_analyzer(pcapfile, savefile, client_ip_prev, server_ip_prev, cli
 
 
 if __name__ == '__main__':
-    # packet_info('TCP_PKTS.pcap', 'tcp_connection.txt')
+    packet_info('HTTP_.pcap', 'tcp_connection.txt')
 
     # tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '52.108.195.3', '10.26.184.140', 443, 7429)
     # tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '10.26.184.140', '169.254.169.254', 1294, 80)
     # http_stream_analyzer('Http_.pcap', '3.txt', '10.25.217.154', '113.246.57.9', 53560)
 
-    tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '10.26.184.140', '113.240.72.12', 1299, 8081)
-    '''
-    You can call functions here to test your code.
-    '''
+    # tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '10.26.184.140', '113.240.72.12', 1299, 8081)
+
 # 52.108.195.3:443 -> 10.26.184.140:7429
