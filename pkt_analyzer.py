@@ -1,7 +1,9 @@
+from matplotlib.ticker import MultipleLocator
 from scapy.all import *
 from scapy.layers.http import HTTP, HTTPResponse
 from scapy.layers.inet import TCP, IP
 from scapy.layers.inet6 import IPv6
+import matplotlib.pyplot as plt
 
 conf.verb = 0
 
@@ -22,7 +24,7 @@ def packet_info(pcap_file, save_file):
     processed_connections = set()
     with open(save_file, 'w') as f:
         for packet in packets:
-            if packet.haslayer(TCP) and packet.haslayer(IP) :
+            if packet.haslayer(TCP) and packet.haslayer(IP):
                 src_port = packet.getlayer(TCP).sport
                 dst_port = packet.getlayer(TCP).dport
                 if packet.haslayer(IP):
@@ -45,17 +47,20 @@ def tcp_stream_analyzer(file, savefile, client_ip_prev, server_ip_prev, client_p
               (packet.haslayer(IPv6) and packet[IPv6].src == client_ip_prev and packet[IPv6].dst == server_ip_prev)) and
              ((packet[TCP].sport == client_port_prev and packet[TCP].dport == server_port_prev)) or
              (((packet.haslayer(IP) and packet[IP].src == server_ip_prev and packet[IP].dst == client_ip_prev) or
-              (packet.haslayer(IPv6) and packet[IPv6].src == server_ip_prev and packet[IPv6].dst == client_ip_prev)) and
-                 ((packet[TCP].sport == server_port_prev and packet[TCP].dport == client_port_prev))))
+               (packet.haslayer(IPv6) and packet[IPv6].src == server_ip_prev and packet[
+                   IPv6].dst == client_ip_prev)) and
+              ((packet[TCP].sport == server_port_prev and packet[TCP].dport == client_port_prev))))
 
     def custom_filter_cs(packet):
         return (((packet.haslayer(IP) and packet[IP].src == client_ip_prev and packet[IP].dst == server_ip_prev) or
-              (packet.haslayer(IPv6) and packet[IPv6].src == client_ip_prev and packet[IPv6].dst == server_ip_prev)) and
+                 (packet.haslayer(IPv6) and packet[IPv6].src == client_ip_prev and packet[
+                     IPv6].dst == server_ip_prev)) and
                 (packet[TCP].sport == client_port_prev and packet[TCP].dport == server_port_prev))
 
     def custom_filter_sc(packet):
         return (((packet.haslayer(IP) and packet[IP].src == server_ip_prev and packet[IP].dst == client_ip_prev) or
-               (packet.haslayer(IPv6) and packet[IPv6].src == server_ip_prev and packet[IPv6].dst == client_ip_prev)) and
+                 (packet.haslayer(IPv6) and packet[IPv6].src == server_ip_prev and packet[
+                     IPv6].dst == client_ip_prev)) and
                 (packet[TCP].sport == server_port_prev and packet[TCP].dport == client_port_prev))
 
     def isSYN(packet):
@@ -102,7 +107,7 @@ def tcp_stream_analyzer(file, savefile, client_ip_prev, server_ip_prev, client_p
                     seq_num = 0
                 s = f"Server -> Client Num: {i + 1}, SEQ: {seq_num}, ACK: {ack_num} {flags}\n"
                 f.write(s)
-            else :
+            else:
                 seq_num = tcp.seq - cs_start_seq
                 ack_num = tcp.ack - sc_start_seq
                 if isSYN(p):
@@ -110,6 +115,79 @@ def tcp_stream_analyzer(file, savefile, client_ip_prev, server_ip_prev, client_p
                 s = f"Client -> Server Num: {i + 1}, SEQ: {seq_num}, ACK: {ack_num} {flags}\n"
                 f.write(s)
     f.close()
+
+
+def tcp_feature_analyzer(file, client_ip_prev, server_ip_prev, client_port_prev, server_port_prev):
+    def custom_filter(packet):
+        return (packet.haslayer(IPv6) or packet.haslayer(IP)) and packet.haslayer(TCP) and \
+            (((packet.haslayer(IP) and packet[IP].src == client_ip_prev and packet[IP].dst == server_ip_prev) or
+              (packet.haslayer(IPv6) and packet[IPv6].src == client_ip_prev and packet[IPv6].dst == server_ip_prev)) and
+             ((packet[TCP].sport == client_port_prev and packet[TCP].dport == server_port_prev)) or
+             (((packet.haslayer(IP) and packet[IP].src == server_ip_prev and packet[IP].dst == client_ip_prev) or
+               (packet.haslayer(IPv6) and packet[IPv6].src == server_ip_prev and packet[
+                   IPv6].dst == client_ip_prev)) and
+              ((packet[TCP].sport == server_port_prev and packet[TCP].dport == client_port_prev))))
+
+    def custom_filter_cs(packet):
+        return (((packet.haslayer(IP) and packet[IP].src == client_ip_prev and packet[IP].dst == server_ip_prev) or
+                 (packet.haslayer(IPv6) and packet[IPv6].src == client_ip_prev and packet[
+                     IPv6].dst == server_ip_prev)) and
+                (packet[TCP].sport == client_port_prev and packet[TCP].dport == server_port_prev))
+
+    def custom_filter_sc(packet):
+        return (((packet.haslayer(IP) and packet[IP].src == server_ip_prev and packet[IP].dst == client_ip_prev) or
+                 (packet.haslayer(IPv6) and packet[IPv6].src == server_ip_prev and packet[
+                     IPv6].dst == client_ip_prev)) and
+                (packet[TCP].sport == server_port_prev and packet[TCP].dport == client_port_prev))
+
+    def isSYN(packet):
+        return packet.getlayer(TCP).flags & 0x02
+
+    packets = rdpcap(file)
+    filtered_packets = list(filter(custom_filter, packets))
+    sc_start_seq = 0
+    cs_start_seq = 0
+    for p in filtered_packets:
+        if custom_filter_sc(p):
+            sc_start_seq = p.getlayer(TCP).seq
+            break
+    for p in filtered_packets:
+        if custom_filter_cs(p):
+            cs_start_seq = p.getlayer(TCP).seq
+            break
+    res = []
+
+    s = f"Server : {server_ip_prev}:{server_port_prev} <-> Client : {client_ip_prev}:{client_port_prev}\n"
+
+    for i, p in enumerate(filtered_packets):
+        is_server = False
+        if p.haslayer(IP) and p[IP].src == server_ip_prev:
+            is_server = True
+        elif p.haslayer(IP) and p[IP].src == client_ip_prev:
+            is_server = False
+        elif p.haslayer(IPv6) and p[IPv6].src == server_ip_prev:
+            is_server = True
+        elif p.haslayer(IPv6) and p[IPv6].src == client_ip_prev:
+            is_server = False
+        tcp = p.getlayer(TCP)
+        flags = ""
+        if tcp.flags & 0x01: flags += "F"
+        if tcp.flags & 0x02: flags += "S"
+        if tcp.flags & 0x04: flags += "R"
+        if tcp.flags & 0x08: flags += "P"
+        if tcp.flags & 0x10: flags += "A"
+        if tcp.flags & 0x20: flags += "U"
+        if tcp.flags & 0x40: flags += "E"
+        if tcp.flags & 0x80: flags += "C"
+        if not is_server:
+            seq_num = tcp.seq - cs_start_seq
+            ack_num = tcp.ack - sc_start_seq
+            if isSYN(p):
+                ack_num = 0
+            # s = f"Client -> Server Num: {i + 1}, SEQ: {seq_num}, ACK: {ack_num} {flags}\n"
+            res.append([i + 1, seq_num, ack_num, 0])
+
+    return res
 
 
 def http_stream_analyzer(pcapfile, savefile, client_ip_prev, server_ip_prev, client_port_prev):
@@ -121,11 +199,10 @@ def http_stream_analyzer(pcapfile, savefile, client_ip_prev, server_ip_prev, cli
     :param client_port_prev: port of client of HTTP stream waiting for analysis
     :return: not specified
     """
-    http_stream = ''
-    buffer = ''
 
     def custom_filter(packet):
         return packet.haslayer(IP) and packet.haslayer(TCP)
+
     packets = rdpcap(pcapfile)
     packets = list(filter(custom_filter, packets))
     with open(savefile, 'w') as f:
@@ -152,12 +229,42 @@ def http_stream_analyzer(pcapfile, savefile, client_ip_prev, server_ip_prev, cli
 
 
 if __name__ == '__main__':
-    packet_info('HTTP_.pcap', 'tcp_connection.txt')
+    # packet_info('HTTP_.pcap', 'tcp_connection.txt')
+    res = tcp_feature_analyzer('long.pcap', '10.24.64.59', '183.240.19.42', 14569, 9237)
+    ack = res[0][2]
+    len = 1
+    for item in res:
+        if ack != item[2]:
+            len += 1
+            ack = item[2]
 
-    # tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '52.108.195.3', '10.26.184.140', 443, 7429)
-    # tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '10.26.184.140', '169.254.169.254', 1294, 80)
-    # http_stream_analyzer('Http_.pcap', '3.txt', '10.25.217.154', '113.246.57.9', 53560)
+    ack = res[0][2]
+    rtt_count = [0 for _ in range(len + 1)]
+    rtt = 1
+    count = 1
+    for item in res:
+        if ack != item[2]:
+            rtt += 1
+            ack = item[2]
+            count = 1
+        item[0] = rtt
+        rtt_count[rtt] += 1
+        item[3] = count
+        count += 1
+    re = rtt_count[1:]
+    x_values = list(range(1, len + 1))
+    # plt.plot([1, 2], [32, 31])
+    plt.plot(x_values, re)
+    plt.xlabel('rtt')
+    plt.ylabel('package number')
+    plt.title('')
+    plt.show()
+    pass
 
-    # tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '10.26.184.140', '113.240.72.12', 1299, 8081)
+# tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '52.108.195.3', '10.26.184.140', 443, 7429)
+# tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '10.26.184.140', '169.254.169.254', 1294, 80)
+# http_stream_analyzer('Http_.pcap', '3.txt', '10.25.217.154', '113.246.57.9', 53560)
+
+# tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '10.26.184.140', '113.240.72.12', 1299, 8081)
 
 # 52.108.195.3:443 -> 10.26.184.140:7429
