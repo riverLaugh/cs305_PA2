@@ -211,6 +211,7 @@ def http_stream_analyzer(pcapfile, savefile, client_ip_prev, server_ip_prev, cli
                 if packet.getlayer(IP).src == client_ip_prev and packet.getlayer(
                         IP).dst == server_ip_prev and packet.getlayer(TCP).sport == client_port_prev:
                     http = packet.getlayer(TCP).payload
+                    print(str(http))
                     a = str(http.Method).replace("b'", "").replace("'", "")
                     b = str(http.Http_Version).replace("b'", "").replace("'", "")
                     c = str(http.Path).replace("b'", "").replace("'", "")
@@ -230,40 +231,40 @@ def http_stream_analyzer(pcapfile, savefile, client_ip_prev, server_ip_prev, cli
 
 if __name__ == '__main__':
     # packet_info('HTTP_.pcap', 'tcp_connection.txt')
-    res = tcp_feature_analyzer('long.pcap', '10.24.64.59', '183.240.19.42', 14569, 9237)
-    ack = res[0][2]
-    len = 1
-    for item in res:
-        if ack != item[2]:
-            len += 1
-            ack = item[2]
+    # res = tcp_feature_analyzer('long.pcap', '10.24.64.59', '183.240.19.42', 14569, 9237)
+    # ack = res[0][2]
+    # len = 1
+    # for item in res:
+    #     if ack != item[2]:
+    #         len += 1
+    #         ack = item[2]
+    #
+    # ack = res[0][2]
+    # rtt_count = [0 for _ in range(len + 1)]
+    # rtt = 1
+    # count = 1
+    # for item in res:
+    #     if ack != item[2]:
+    #         rtt += 1
+    #         ack = item[2]
+    #         count = 1
+    #     item[0] = rtt
+    #     rtt_count[rtt] += 1
+    #     item[3] = count
+    #     count += 1
+    # re = rtt_count[1:]
+    # x_values = list(range(1, len + 1))
+    # # plt.plot([1, 2], [32, 31])
+    # plt.plot(x_values, re)
+    # plt.xlabel('rtt')
+    # plt.ylabel('package number')
+    # plt.title('')
+    # plt.show()
+    # pass
 
-    ack = res[0][2]
-    rtt_count = [0 for _ in range(len + 1)]
-    rtt = 1
-    count = 1
-    for item in res:
-        if ack != item[2]:
-            rtt += 1
-            ack = item[2]
-            count = 1
-        item[0] = rtt
-        rtt_count[rtt] += 1
-        item[3] = count
-        count += 1
-    re = rtt_count[1:]
-    x_values = list(range(1, len + 1))
-    # plt.plot([1, 2], [32, 31])
-    plt.plot(x_values, re)
-    plt.xlabel('rtt')
-    plt.ylabel('package number')
-    plt.title('')
-    plt.show()
-    pass
-
-# tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '52.108.195.3', '10.26.184.140', 443, 7429)
-# tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '10.26.184.140', '169.254.169.254', 1294, 80)
-# http_stream_analyzer('Http_.pcap', '3.txt', '10.25.217.154', '113.246.57.9', 53560)
+    # tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '52.108.195.3', '10.26.184.140', 443, 7429)
+    tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '10.26.184.140', '169.254.169.254', 1294, 80)
+#     http_stream_analyzer('Http_.pcap', '3.txt', '10.25.217.154', '113.246.57.9', 53560)
 
 # tcp_stream_analyzer('TCP_PKTS.pcap', '2.txt', '10.26.184.140', '113.240.72.12', 1299, 8081)
 
